@@ -5,13 +5,15 @@
 //   when online, with the last saved copy used when offline.
 //   Photos from GitHub: cache first (an approved photo never changes).
 //   Map tiles are not saved (the tile services ask apps not to stockpile them).
-// mwpio8wx is replaced by tools/web/build.mjs on every build, which retires
+// mwpj01bz is replaced by tools/web/build.mjs on every build, which retires
 // the previous build's saved files.
-const CACHE = "lk-mwpio8wx";
+const CACHE = "lk-mwpj01bz";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: "reload" so a new build never saves a stale page from the browser's own cache.
+  const fresh = SHELL.map((u) => new Request(u, { cache: "reload" }));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -30,7 +32,14 @@ const save = (req, res) => {
   return res;
 };
 const cacheFirst = (req) => caches.match(req).then((hit) => hit || fetch(req).then((res) => save(req, res)));
-const networkFirst = (req) => fetch(req).then((res) => save(req, res)).catch(() => caches.match(req));
+// "Fresh" fetch: always check with the server (cheap when nothing changed), instead of
+// accepting the browser's cached copy, which GitHub lets live for up to 10 minutes.
+// Page loads must keep redirect: "manual", or a redirected page fails to open.
+const freshFetch = (req) =>
+  req.mode === "navigate"
+    ? fetch(req.url, { cache: "no-cache", credentials: "same-origin", redirect: "manual" })
+    : fetch(new Request(req, { cache: "no-cache" }));
+const networkFirst = (req) => freshFetch(req).then((res) => save(req, res)).catch(() => caches.match(req));
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
