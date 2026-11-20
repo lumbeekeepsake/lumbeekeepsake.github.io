@@ -5,9 +5,9 @@
 //   when online, with the last saved copy used when offline.
 //   Photos from GitHub: cache first (an approved photo never changes).
 //   Map tiles are not saved (the tile services ask apps not to stockpile them).
-// mwpi9kto is replaced by tools/web/build.mjs on every build, which retires
+// mwpidntr is replaced by tools/web/build.mjs on every build, which retires
 // the previous build's saved files.
-const CACHE = "lk-mwpi9kto";
+const CACHE = "lk-mwpidntr";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (event) => {
